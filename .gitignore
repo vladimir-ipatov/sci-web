@@ -1,0 +1,15 @@
+debian/sci-web.default
+debian/sci-web.postinst.debhelper
+debian/sci-web.postrm.debhelper
+debian/sci-web.preinst.debhelper
+debian/sci-web.prerm.debhelper
+debian/sci-web.debhelper.log
+debian/sci-web.substvars
+debian/sci-web
+debian/files
+Makefile
+build-stamp
+install-stamp
+config.log
+config.status
+
