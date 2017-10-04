@@ -1,0 +1,14 @@
+Source: sci-web
+Section: admin
+Priority: extra
+Maintainer: Vladimir Ipatov <vs@ipatov.net>
+Uploaders: Vladimir Ipatov <vs@ipatov.net>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.9.3
+Homepage: https://github.com/vladimir-ipatov/sci-web/
+Vcs-Browser: https://github.com/vladimir-ipatov/sci-web.git
+
+Package: sci-web
+Architecture: all
+Depends: ${misc:Depends}, ganeti (>= 2.15), python-django, nginx, python-django-registration, python-requests, uwsgi
+Description: Skycover Infrastructure web-interface

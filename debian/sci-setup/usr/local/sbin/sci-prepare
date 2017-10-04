@@ -1,0 +1,347 @@
+#!/bin/sh
+
+#vars
+tempdir=/usr/local/tmp
+VERSION=2.4
+lockfile=$tempdir/lock
+
+if [ -f $lockfile ]; then
+	echo "sci-prepare has been already started. aborting"
+	exit 1
+fi
+
+touch $lockfile
+
+## prepare apt sources
+cp /root/sci-dev.list /etc/apt/sources.list.d
+apt-key add /root/apt.pub
+aptitude update
+
+## install packages
+aptitude install -y xen-utils-4.1 xenstore-utils xen-hypervisor-4.1-amd64 ganeti ganeti-2.10 ganeti-haskell-2.10 ganeti-htools-2.10 ganeti-instance-debootstrap qemu drbd8-utils
+aptitude install -y smartmontools lm-sensors hdparm sysstat git ntfsprogs ntfs-3g mbr lsb-release acpi-support-base puppet nut nut-server nut-client sudo screen tcpdump ethtool iperf ifenslave-2.6 bridge-utils vlan yum vim chrony git sysfsutils sg3-utils mc fio ipcalc pwgen locales less usbmount
+
+## Setting up default grub entry - 'Debian GNU/Linux, with Linux 2.6.*-xen-amd64 and XEN 4.0-*'
+dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
+update-grub
+## Adding hypervisor option dom0_mem=512M
+grub_file=$target/etc/default/grub
+if [ -f $grub_file ]; then
+ echo Configuring GRUB 
+ /usr/local/sbin/strreplace.sh $grub_file "^GRUB_CMDLINE_XEN" 'GRUB_CMDLINE_XEN="dom0_mem=1536M"'
+ # XXX there is no setting separately for xenkopt
+ # XXX with nosmp md raid is not loading with hypervisor menuentry
+ #echo 'GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX nosmp"' >>$grub_file
+ test -z "$target" && update-grub
+else
+ echo Not configuring GRUB
+fi
+
+## Set /var/log/kern.log to unbuffered mode
+/usr/local/sbin/strreplace.sh $target/etc/rsyslog.conf "^kern\.\*[\t ]+-\/var\/log\/kern.log" 'kern.*\t\t\t\t/var/log/kern.log'
+
+## Set hostname to fqdn
+hostname=`head -1 $target/etc/hostname`
+if [ -n "$hostname" ]; then
+base_name=`echo $hostname|sed -E 's/^([^.]*[^0-9])[0-9]+\.?.*/\1/'`
+ipaddr=`grep $hostname $target/etc/hosts|awk '{print $1}'`
+hostfqdn=`grep $hostname $target/etc/hosts|awk '{print $2}'`
+domain=`grep $hostname $target/etc/hosts|awk '{sub("^[^.]*\.","",$2); print $2}'`
+#reloc_domain=`awk -v d="$domain" 'BEGIN{gsub("[.]","\\\\\\\\\\\\\\\\.",d);print d; exit}'`
+if [ -n "$domain" -a -n "$ipaddr" ]; then
+ echo Configuring host/domainname stuff for $ipaddr $fqdn
+ if [ "$hostname" = "$hostfqdn" ]; then
+  echo Hostname configuration already ok
+ else
+  nodenum=`echo $hostname|sed 's/^[^0-9]*\([0-9][0-9]*\)$/\1/g'`
+  if [ -z $nodenum -o $nodenum -lt 0 -o $nodenum -gt 90]; then
+   echo "Host name must ends with number between 1 and 90"|tee -a $target/etc/should-reinstall
+  fi
+  echo $hostfqdn >$target/etc/hostname
+ fi
+else
+ echo Not configuring host/domainname stuff
+fi
+fi
+
+## Set xend-config.sxp: xend-relocation-hosts-allow to allow relocation from local domain
+# copy template for xend-config.sxp - it will be tuned in sci-setup
+mkdir -p $target/etc/xen
+cp $tempdir/xend-config.sxp $target/etc/xen
+
+## Assign supersede parameters for node's dhcp
+dns=10.101.200.2 # sci
+/usr/local/sbin/strreplace.sh $target/etc/dhcp/dhclient.conf "^#supersede domain-name" "supersede domain-name $domain\;\nsupersede domain-name-servers $dns\;"
+
+## Set up module loading (drbd, 8021q, loop)
+echo Setting up modules
+echo options drbd minor_count=128 usermode_helper=/bin/true disable_sendpage=1 >>$target/etc/modprobe.d/drbd.conf
+echo options loop max_loop=64 >>$target/etc/modprobe.d/local-loop.conf
+echo drbd >>$target/etc/modules
+echo 8021q >>$target/etc/modules
+
+## Allow plugins and facts syncing for puppet
+echo Editing puppet.conf
+sed -i '/\[main\]/ a\pluginsync = true' $target/etc/puppet/puppet.conf
+
+## Enable puppet to start
+echo Setting up defaults
+/usr/local/sbin/strreplace.sh $target/etc/default/puppet "^START=" "START=yes"
+
+## Set DRBD resync speed auto adjustment
+update-rc.d drbd-sync-rate defaults >/dev/null
+
+## Disable xendomains saving options
+/usr/local/sbin/strreplace.sh $target/etc/default/xendomains "^XENDOMAINS_SAVE" 'XENDOMAINS_SAVE=""'
+
+## Enable smartd to start
+/usr/local/sbin/strreplace.sh $target/etc/default/smartmontools "^#start_smartd=yes" "start_smartd=yes"
+
+## Tune temperature warning on smartd
+/usr/local/sbin/strreplace.sh $target/etc/smartd.conf "^DEVICESCAN" "DEVICESCAN -d removable -n standby -m root -R 194 -R 231 -I 9 -W 5,50,55 -M exec /usr/share/smartmontools/smartd-runner"
+
+## Remove /media/usb0 mountpoint from fstab as we using usbmount helper
+sed -i '/\/media\/usb0/d' $target/etc/fstab
+
+## Add flush option for USB-flash mounted with vfat
+mkdir -p $target/etc/usbmount
+/usr/local/sbin/strreplace.sh $target/etc/usbmount/usbmount.conf "^FS_MOUNTOPTIONS" 'FS_MOUNTOPTIONS="-fstype=vfat,flush"'
+
+## Set localized console and keyboard
+cp $tempdir/default/* $target/etc/default/
+
+## checkout git repo for sci-puppet and disable local sources
+mkdir -p $target/usr/local/simple-cdd/SCI-amd64.files/files/root
+cd $target/usr/local/simple-cdd/SCI-amd64.files/files/root
+git clone https://github.com/skycover/sci-puppet.git
+mv sci-puppet puppet
+cd puppet
+git checkout $VERSION
+sed -i 's/local_sources => yes/local_sources => no/' $target/usr/local/simple-cdd/SCI-amd64.files/files/root/puppet/manifests/nodes.pp
+sed -i 's/approx_local/approx/' $target/usr/local/simple-cdd/SCI-amd64.files/files/root/puppet/manifests/nodes.pp
+
+## Add startup script rc.sci to setup performance
+# a bit ugly, but fast ;)
+cat <<EOF >$target/etc/rc.local
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+
+if [ -f /etc/rc.sci ]; then
+  . /etc/rc.sci
+fi
+
+exit 0
+EOF
+chmod +x $target/etc/rc.local
+
+## Add "xm sched-credit -d0 -w512" to rc.sci
+# equal priority of Dom0 make problems on the block devices
+
+## Tune storage scheduler for better disk latency
+cat <<EOFF >$target/etc/rc.sci
+#!/bin/sh
+# On-boot configuration for hardware for better cluster performance
+# mostly http://code.google.com/p/ganeti/wiki/PerformanceTuning
+
+# If you use hardware raid or external FC/Infiniband storage, you prorably would rather use noop scheduler instead of deadline
+
+# rise priority for dom0, alowing drbd to work fine
+xm sched-credit -d0 -w512
+
+modprobe sg
+disks=\`sg_map -i|awk '{print substr(\$2, length(\$2))}'\`
+for i in \$disks; do
+  # Set value if you want to use read-ahead
+  ra="$read_ahead"
+  if [ -n "\$ra" ]; then
+    blockdev --setra \$ra /dev/sd\$i
+  fi
+  if grep -q sd\$i /etc/sysfs.conf; then
+    echo sd\$i already configured in /etc/sysfs.conf
+  else
+ cat <<EOF >>/etc/sysfs.conf
+block/sd\$i/queue/scheduler = deadline
+block/sd\$i/queue/iosched/front_merges = 0
+block/sd\$i/queue/iosched/read_expire = 150
+block/sd\$i/queue/iosched/write_expire = 1500
+EOF
+  fi
+done
+/etc/init.d/sysfsutils restart
+EOFF
+chmod +x $target/etc/rc.sci
+
+## Add tcp buffers tuning for drbd
+## Tune disk system to avoid (or reduce?) deadlocks
+cat <<EOF >$target/etc/sysctl.d/sci.conf
+# Increase "minimum" (and default) 
+# tcp buffer to increase the chance to make progress in IO via tcp, 
+# even under memory pressure. 
+# These numbers need to be confirmed - probably a bad example.
+#net.ipv4.tcp_rmem = 131072 131072 10485760 
+#net.ipv4.tcp_wmem = 131072 131072 10485760 
+
+# add disk tuning options to avoid (or reduce?) deadlocks
+# gives better latency on heavy load
+vm.overcommit_memory = 1
+vm.dirty_background_ratio = 5
+vm.dirty_ratio = 10
+vm.dirty_expire_centisecs = 1000
+EOF
+
+## Add workaround for bnx2x NIC on HP Proliant and Blade servers
+# https://bugzilla.redhat.com/show_bug.cgi?id=518531
+## Disable autosuspend for usb devices which cause some keyboards to hang
+# http://debian.2.n7.nabble.com/Bug-689368-linux-image-3-5-trunk-amd64-Mouse-and-keyboard-freeze-on-Ivy-Bridge-platform-td2508855.html
+cat <<EOF  >$target/etc/modprobe.d/sci.conf
+options bnx2x disable_tpa=1
+options usbcore autosuspend=-1
+EOF
+
+## Set up symlinks /boot/vmlinuz-xenU, /boot/initrd-xenU
+ln -s `ls $target/boot/vmlinuz-*-amd64|sed -Ee 's/^(.*-)([0-9.]+)(\.ime)$/\2.-1 \1\2\3/'| sort -t. -n -k1,1 -k2,2 -k3,3 -k4,4|tail -n 1` $target/boot/vmlinuz-xenU
+ln -s `ls $target/boot/initrd.img-*-amd64|sed -Ee 's/^(.*-)([0-9.]+)(\.ime)$/\2.-1 \1\2\3/'| sort -t. -n -k1,1 -k2,2 -k3,3 -k4,4|tail -n 1` $target/boot/initrd.img-xenU
+
+## Set up symlink /usr/lib/xen for quemu-dm (workaround)
+ln -s $target/usr/lib/xen-4.1 $target/usr/lib/xen
+
+# Mount /stuff if we detect unmounted xenvg/system-stuff
+mkdir -p $target/stuff
+
+# Place commented-out template for /stuff if no one
+grep -q /stuff $target/etc/fstab || echo "#/dev/xenvg/system-stuff /stuff ext4 errors=remount-ro 0 0" >>$target/etc/fstab
+
+## Set up CD-ROM repository: create /stuff/cdimages
+echo Setting up local CD-ROM repository
+mkdir -p $target/stuff/cdimages
+
+## wget gplpv.iso
+wget http://sci-dev.skycover.ru/dist/gplpv.iso -o /stuff/cdimages/gplpv.iso
+
+## Link /var/lib/ganeti/export to /stuff/export
+mkdir -p $target/var/lib/ganeti/export
+mkdir -p $target/stuff/export
+echo "/stuff/export   /var/lib/ganeti/export ext4 bind 0 0" >> $target/etc/fstab
+mount -a
+
+## Add ganeti hooks if any
+mkdir -p $target/etc/ganeti/hooks
+cp -r $tempdir/ganeti/hooks $target/etc/ganeti/
+
+## Add nut configs
+cp $tempdir/nut/* $target/etc/nut
+chown root:nut $target/etc/nut/*
+chmod 640 $target/etc/nut/*
+echo "%nut    ALL=NOPASSWD: /usr/local/sbin/gnt-node-shutdown.sh" >> $target/etc/sudoers
+update-rc.d nut-client remove
+
+## Write motd
+cat <<EOF >$target/etc/motd
+
+SkyCover Infrastructure high availability cluster node, ver. $VERSION
+For more information see http://www.skycover.ru
+
+EOF
+
+## Set chrony reboot if there is no sources
+echo 'PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin' >> $target/etc/cron.d/chrony
+echo '*/10 * * * *      root    chronyc sourcestats|grep -q "^210 Number of sources = 0" && service chrony restart' >> $target/etc/cron.d/chrony
+
+## Change debootstrap source for debian wheezy
+sed -i 's/MIRROR\=file\:\/media\/sci\//MIRROR\=http\:\/\/ftp.debian.org\/debian\//' $target/etc/default/ganeti-instance-debootstrap
+sed -i '/EXTRA_ARGS\=\"--no-check-gpg\"/d' $target/etc/default/ganeti-instance-debootstrap
+
+## Write installed version information
+mkdir -p $target/etc/sci
+echo $VERSION >$target/etc/sci/sci.version
+
+## Filling SCI configuration template
+cat <<EOF >$target/etc/sci/sci.conf
+# This is the SCI-CD cluster setup parameters
+# Fill the values and execute "sci-setup cluster"
+
+# The hostname to represent the cluster (without a domain part).
+# It MUST be different from any node's hostnames
+CLUSTER_NAME=
+
+# The IP address corresponding to CLUSTER_NAME.
+# It MUST be different from any node's IP.
+# You should not up this IP address manualy - it will be automatically
+# activated as an interface alias on the current master node
+# We suggest to assign this address in the LAN (if LAN segment is present)
+CLUSTER_IP=
+
+# The first (master) node data
+NODE1_NAME=
+NODE1_IP=10.101.200.11
+
+# Optional separate IP for SAN (should be configured and up;
+# ganeti node will be configured with -s option)
+NODE1_SAN_IP=
+# Optional separate IP for LAN (should be configured and up)
+NODE1_LAN_IP=
+
+# Mandatory IP for virtual service machine "sci" in the backbone segment
+SCI_IP=10.101.200.2
+# Optional additional IP for virtual service machine "sci" in the LAN segment.
+# If NODE1_LAN_IP is set, then you probably wish to set this too.
+# (you should not to pre-configure this IP on the node)
+SCI_LAN_IP=
+# Optional parameters if NODE1_LAN_IP not configured
+# If not set, it will be omited in instance's interface config
+SCI_LAN_NETMASK=
+SCI_LAN_GATEWAY=
+
+# Single mode. The cluster will be set up without second node, in non redundant mode
+# Uncomment to enable single mode
+#SINGLE_MODE=yes
+
+
+# The second node data
+NODE2_NAME=
+NODE2_IP=
+NODE2_SAN_IP=
+NODE2_LAN_IP=
+
+# Network interface for CLUSTER_IP
+# (if set, this interface will be passed to "gnt-cluser init --master-netdev")
+# Autodetect if NODE1_LAN_IP is set and CLUSTER_IP matches LAN network
+MASTER_NETDEV=
+MASTER_NETMASK=
+
+# Network interface to bind to virtual machies by default
+# (if set, this interface will be passed to
+# "gnt-cluster init --nic-parameters link=")
+# Autodetect if NODE1_LAN_IP or MASTER_NETDEV are set
+LAN_NETDEV=
+
+# reserved volume names are ignored by Ganety and may be used for any needs
+# (comma separated)
+RESERVED_VOLS="xenvg/system-.*"
+
+# sources for approx apt cache server on sci
+# all two together must be non empty, or nonexistent
+APT_DEBIAN="debian http://ftp.debian.org/debian/"
+APT_SECURITY="security http://security.debian.org/"
+
+# forwarders for DNS server on sci
+# use syntax "1.2.3.4; 1.2.3.4;"
+DNS_FORWARDERS=""
+
+# Locale and timezone for cluster
+# It will be set via puppet
+TIMEZONE="Europe/Moscow"
+#TIMEZONE="US/Pacific"
+LOCALE="ru_RU.UTF-8"
+#LOCALE="en_US.UTF-8"
+
+EOF
+

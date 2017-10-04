@@ -1,0 +1,3 @@
+sci-web /opt
+nginx.conf /etc/nginx/sites-available/sci-web.conf
+uwsgi.conf /etc/uwsgi/apps-available/sci-web.ini

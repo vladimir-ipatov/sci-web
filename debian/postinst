@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ ! -f /etc/ganeti/instance-debootstrap/hooks/clear-root-password ]; then
+    /opt/sci-web/nginx.conf /etc/nginx/conf.d/sci-web.conf
+    service nginx reload
+fi
+
