@@ -2,4 +2,4 @@
 
 sed -i "s/scpassword/`cat /var/lib/ganeti/rapi/users|grep scweb|awk '{print $2}'`/" /opt/sci-web/sci_webinterface/settings.py
 
-(cd /opt/sci-web; ./manage.py migrate; ./manage.py collectstatic)
+(cd /opt/sci-web; ./manage.py migrate; ./manage.py collectstatic --noinput)
