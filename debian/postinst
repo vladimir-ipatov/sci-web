@@ -1,7 +1,5 @@
 #!/bin/sh
 
-if [ ! -f /etc/ganeti/instance-debootstrap/hooks/clear-root-password ]; then
-    /opt/sci-web/nginx.conf /etc/nginx/conf.d/sci-web.conf
-    service nginx reload
-fi
+sed -i "s/scpassword/`cat /var/lib/ganeti/rapi/users|grep scweb|awk '{print $2}'`/" /opt/sci-web/sci_webinterface/settings.py
 
+(cd /opt/sci-web; ./manage.py migrate; ./manage.py collectstatic)
