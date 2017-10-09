@@ -3,3 +3,12 @@
 sed -i "s/scpassword/`cat /var/lib/ganeti/rapi/users|grep scweb|awk '{print $2}'`/" /opt/sci-web/sci_webinterface/settings.py
 
 (cd /opt/sci-web; ./manage.py migrate; ./manage.py collectstatic --noinput)
+
+if [ ! -e /etc/nginx/sites-enabled/sci-web.conf ]; then
+	ln -s /etc/nginx/sites-available/sci-web.conf /etc/nginx/sites-enabled/sci-web.conf
+	service nginx restart
+fi
+if [ ! -e /etc/uwsgi/apps-enabled/sci-web.ini ]; then
+	ln -s /etc/uwsgi/apps-available/sci-web.ini /etc/uwsgi/apps-enabled/sci-web.ini
+	service uwsgi restart
+fi
