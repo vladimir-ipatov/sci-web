@@ -13,5 +13,5 @@ install-stamp
 config.log
 config.status
 debian/debhelper-build-stamp
-sci-web
+/sci-web
 build

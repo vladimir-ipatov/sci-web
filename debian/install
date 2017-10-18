@@ -1,3 +1,4 @@
 sci-web /opt
-sci-web.conf /etc/nginx/sites-available
-sci-web.ini /etc/uwsgi/apps-available
+config/sci-web.conf /etc/nginx/sites-available
+config/sci-web.ini /etc/uwsgi/apps-available
+config/sci-web /etc/pam.d
