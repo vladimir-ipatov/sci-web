@@ -1,3 +1,41 @@
+sci-web (3.0-5) unstable; urgency=low
+
+  * add master failover functions
+  * small template fixes
+  * fix depends
+  * fix node view offline status show
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Tue, 25 Sep 2018 00:15:24 +0300
+
+sci-web (3.0-4) unstable; urgency=low
+
+  * add filters for grow disk size value
+  * add modify
+  * add replace-disks form
+  * add commands: NodeFailover,NodeMigrate,NodeOnline/Offline, redist-conf
+  * add confirmataion dialogs for some commands
+  * small template fixes
+  * add default os variant for linux
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Fri, 22 Sep 2018 00:30:24 +0300
+
+sci-web (3.0-3) unstable; urgency=low
+
+  * add grow-disk support
+  * add messages
+  * add job list on cluster view
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Fri, 07 Sep 2018 19:07:24 +0300
+
+sci-web (3.0-2) unstable; urgency=low
+
+  * change page reload rate to 60 sec
+  * add non-master error page
+  * add message for instance add
+  * add ssl support
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Fri, 07 Sep 2018 19:07:24 +0300
+
 sci-web (3.0-1) unstable; urgency=low
 
   * initial release

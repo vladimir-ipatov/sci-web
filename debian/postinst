@@ -8,10 +8,15 @@ fi
 
 if [ ! -e /etc/nginx/sites-enabled/sci-web.conf ]; then
 	ln -s /etc/nginx/sites-available/sci-web.conf /etc/nginx/sites-enabled/sci-web.conf
-	invoke-rc.d nginx restart||true
 fi
 if [ ! -e /etc/uwsgi/apps-enabled/sci-web.ini ]; then
 	ln -s /etc/uwsgi/apps-available/sci-web.ini /etc/uwsgi/apps-enabled/sci-web.ini
+fi
+
+if [ ! -e /etc/nginx/sci-web.crt ]; then
+	openssl req -x509 -newkey rsa:2048 -keyout /etc/nginx/sci-web.key -out /etc/nginx/sci-web.crt -days 10000 -nodes -subj "/CN=sci-web"
+	chmod 600 /etc/nginx/sci-web.key
+	invoke-rc.d nginx restart||true
 fi
 
 # clean old pyc files
