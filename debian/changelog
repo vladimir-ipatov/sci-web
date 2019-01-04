@@ -1,3 +1,11 @@
+sci-web (3.0-6) unstable; urgency=low
+
+  * fix memory display for instances
+  * move requests to rapi to function
+  * add validators for form inputs
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Mon, 03 Dec 2018 00:15:24 +0300
+
 sci-web (3.0-5) unstable; urgency=low
 
   * add master failover functions
