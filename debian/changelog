@@ -1,3 +1,11 @@
+sci-web (3.0-7) unstable; urgency=low
+
+  * breadcumbs
+  * cluster status on all pages
+  * drbd status on node page
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Mon, 01 Jun 2019 00:15:24 +0300
+
 sci-web (3.0-6) unstable; urgency=low
 
   * fix memory display for instances
