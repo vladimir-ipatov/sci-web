@@ -4,6 +4,10 @@ if [ -e /var/lib/ganeti/rapi/users ]; then
 	sed -i "s/scpassword/`cat /var/lib/ganeti/rapi/users|grep scweb|awk '{print $2}'`/" /opt/sci-web/sci_webinterface/settings.py
 fi
 
+if [ -e /etc/ganeti/vnc-cluster-password ]; then
+	sed -i "s/vncpassword/`cat /etc/ganeti/vnc-cluster-password`/" /opt/sci-web/sci_webinterface/settings.py
+fi
+
 (cd /opt/sci-web; ./manage.py migrate; ./manage.py collectstatic --noinput)
 
 if [ ! -e /etc/nginx/sites-enabled/sci-web.conf ]; then
