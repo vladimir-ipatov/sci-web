@@ -1,3 +1,9 @@
+sci-web (3.0-8) unstable; urgency=low
+
+  * fixes for statuspage when instance migrating
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Mon, 05 Jun 2019 00:15:24 +0300
+
 sci-web (3.0-7) unstable; urgency=low
 
   * breadcumbs

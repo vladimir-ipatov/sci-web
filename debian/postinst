@@ -8,7 +8,7 @@ if [ -e /etc/ganeti/vnc-cluster-password ]; then
 	sed -i "s/vncpassword/`cat /etc/ganeti/vnc-cluster-password`/" /opt/sci-web/sci_webinterface/settings.py
 fi
 
-(cd /opt/sci-web; ./manage.py migrate; ./manage.py collectstatic --noinput)
+(cd /opt/sci-web; ./manage.py makemigrations hosts; ./manage.py migrate; ./manage.py collectstatic --noinput)
 
 if [ ! -e /etc/nginx/sites-enabled/sci-web.conf ]; then
 	ln -s /etc/nginx/sites-available/sci-web.conf /etc/nginx/sites-enabled/sci-web.conf
@@ -26,3 +26,4 @@ fi
 # clean old pyc files
 find /opt/sci-web -type f -iname '*.pyc' -exec rm -f {} \;
 invoke-rc.d uwsgi restart||true
+invoke-rc.d nginx restart||true
