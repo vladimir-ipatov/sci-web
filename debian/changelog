@@ -1,3 +1,15 @@
+sci-web (3.2-1) unstable; urgency=low
+
+  * fixes for instance commands
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Mon, 12 Jun 2019 16:15:24 +0300
+
+sci-web (3.2-0) unstable; urgency=low
+
+  * add buster support for create form
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Mon, 05 Jun 2019 00:15:24 +0300
+
 sci-web (3.1-0) unstable; urgency=low
 
   * fixes for new functions

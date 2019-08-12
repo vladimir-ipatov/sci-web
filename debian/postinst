@@ -8,6 +8,10 @@ if [ -e /etc/ganeti/vnc-cluster-password ]; then
 	sed -i "s/vncpassword/`cat /etc/ganeti/vnc-cluster-password`/" /opt/sci-web/sci_webinterface/settings.py
 fi
 
+if [ ! -e /stuff/cdimages ]; then
+	mkdir -p /stuff/cdimages
+fi
+
 (cd /opt/sci-web; ./manage.py makemigrations hosts; ./manage.py migrate; ./manage.py collectstatic --noinput)
 
 if [ ! -e /etc/nginx/sites-enabled/sci-web.conf ]; then
