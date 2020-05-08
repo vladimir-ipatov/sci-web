@@ -12,10 +12,13 @@ if [ ! -e /stuff/cdimages ]; then
 	mkdir -p /stuff/cdimages
 fi
 
-(cd /opt/sci-web; ./manage.py makemigrations hosts; ./manage.py migrate; ./manage.py collectstatic --noinput)
+(cd /opt/sci-web; python3 ./manage.py makemigrations hosts; python3 ./manage.py migrate; python3 ./manage.py migrate --database=tasks --run-syncdb; python3 ./manage.py collectstatic --noinput; python3 ./manage.py compilemessages)
 
 if [ ! -e /etc/nginx/sites-enabled/sci-web.conf ]; then
 	ln -s /etc/nginx/sites-available/sci-web.conf /etc/nginx/sites-enabled/sci-web.conf
+fi
+if [ -h /etc/nginx/sites-enabled/default ]; then
+	rm -f /etc/nginx/sites-enabled/default
 fi
 if [ ! -e /etc/uwsgi/apps-enabled/sci-web.ini ]; then
 	ln -s /etc/uwsgi/apps-available/sci-web.ini /etc/uwsgi/apps-enabled/sci-web.ini
