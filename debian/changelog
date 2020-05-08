@@ -1,3 +1,14 @@
+sci-web (3.3-6) unstable; urgency=low
+
+  * generate django secret key
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Mon, 08 May 2020 23:11:24 +0300
+
+sci-web (3.3-5) unstable; urgency=low
+
+  * move background tasks to separate db
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Mon, 22 Jan 2020 23:11:24 +0300
 sci-web (3.3-5) unstable; urgency=low
 
   * move background tasks to separate db
