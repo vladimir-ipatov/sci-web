@@ -10,5 +10,5 @@ Vcs-Browser: https://github.com/vladimir-ipatov/sci-web.git
 
 Package: sci-web
 Architecture: all
-Depends: ${misc:Depends}, ganeti (>= 2.10), python3-django, nginx, python3-requests, uwsgi, uwsgi-plugin-python3, javascript-common, libjs-jquery, sci-scripts(>= 3.3-0), python3-magic, python3-django-background-tasks, gettext
+Depends: ${misc:Depends}, ganeti (>= 2.10), python3-django, nginx, python3-requests, uwsgi, uwsgi-plugin-python3, javascript-common, libjs-jquery, sci-scripts(>= 3.3-0), python3-magic, python3-django-background-tasks, gettext, pwgen
 Description: Skycover Infrastructure web-interface

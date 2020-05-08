@@ -1,5 +1,7 @@
 #!/bin/sh
 
+sed -i "s/django-secret-key/`pwgen -1 -y -s 48`/" /opt/sci-web/sci_webinterface/settings.py
+
 if [ -e /var/lib/ganeti/rapi/users ]; then
 	sed -i "s/scpassword/`cat /var/lib/ganeti/rapi/users|grep scweb|awk '{print $2}'`/" /opt/sci-web/sci_webinterface/settings.py
 fi
