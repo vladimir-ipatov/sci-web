@@ -1,3 +1,11 @@
+sci-web (3.3-8) unstable; urgency=low
+
+  * fix forms choices generate
+  * add plugin specify in uwsgi
+  * fix https redirect in nginx
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Mon, 19 May 2020 23:11:24 +0300
+
 sci-web (3.3-7) unstable; urgency=low
 
   * upgrade drbd show on node view
