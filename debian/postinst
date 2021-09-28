@@ -1,13 +1,13 @@
 #!/bin/sh
 
-sed -i "s/django-secret-key/`pwgen -1 -s 48`/" /opt/sci-web/sci_webinterface/settings.py
+sed -i "s/django-secret-key/`pwgen -1 -s 48`/" /opt/sci-web/sci_webinterface/auth_settings.py
 
 if [ -e /var/lib/ganeti/rapi/users ]; then
-	sed -i "s/scpassword/`cat /var/lib/ganeti/rapi/users|grep scweb|awk '{print $2}'`/" /opt/sci-web/sci_webinterface/settings.py
+	sed -i "s/scpassword/`cat /var/lib/ganeti/rapi/users|grep scweb|awk '{print $2}'`/" /opt/sci-web/sci_webinterface/auth_settings.py
 fi
 
 if [ -e /etc/ganeti/vnc-cluster-password ]; then
-	sed -i "s/vncpassword/`cat /etc/ganeti/vnc-cluster-password`/" /opt/sci-web/sci_webinterface/settings.py
+	sed -i "s/vncpassword/`cat /etc/ganeti/vnc-cluster-password`/" /opt/sci-web/sci_webinterface/auth_settings.py
 fi
 
 if [ ! -e /stuff/cdimages ]; then

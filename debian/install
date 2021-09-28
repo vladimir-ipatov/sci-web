@@ -2,3 +2,4 @@ sci-web /opt
 config/sci-web.conf /etc/nginx/sites-available
 config/sci-web.ini /etc/uwsgi/apps-available
 config/sci-web /etc/pam.d
+config/auth_settings.py /opt/sci-web/sci_webinterface

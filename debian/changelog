@@ -1,3 +1,38 @@
+sci-web (3.5-1) unstable; urgency=low
+
+  * add debian bullseye support
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Mon, 28 Sep 2021 23:11:24 +0300
+
+sci-web (3.3-12) unstable; urgency=low
+
+  * small internal fixes
+  * favicon fix
+  * add timeout handling for rapi requests
+  * add debian buster, ubuntu bionic support
+  * change debug log to /var/log/sci/sci-web-debug.log
+  * fix disk size field focus in instance_create form when os = windows
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Mon, 09 Jun 2021 23:11:24 +0300
+
+sci-web (3.3-11) unstable; urgency=low
+
+  * move auth settings to separate file
+  * change max iso size to 10G
+  * small internal fixes
+  * favicon
+  * tooltips for drbd sync info
+  * fix job messages parsing
+  * change vg info query from ganeti-mond to sci-mond
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Mon, 08 Mar 2021 23:11:24 +0300
+
+sci-web (3.3-10) unstable; urgency=low
+
+  * fix create and modify cdrom path
+
+ -- Vladimir Ipatov <vs@ipatov.net>  Mon, 24 Jun 2020 23:11:24 +0300
+
 sci-web (3.3-9) unstable; urgency=low
 
   * fix dynamic choices for iso_list
